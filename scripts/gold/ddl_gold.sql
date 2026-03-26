@@ -1,21 +1,27 @@
 /*
 ===============================================================================
-DDL Script: Create Gold Views
+Script DDL: Criação das Visões da Camada Gold (Star Schema)
 ===============================================================================
-Script Purpose:
-    This script creates views for the Gold layer in the data warehouse. 
-    The Gold layer represents the final dimension and fact tables (Star Schema)
+Objetivo:
+    Este script cria as visões (Views) da camada Gold, que representam o modelo 
+    dimensional final do Data Warehouse. 
 
-    Each view performs transformations and combines data from the Silver layer 
-    to produce a clean, enriched, and business-ready dataset.
+Arquitetura:
+    - Modelo: Star Schema (Esquema Estrela).
+    - Conteúdo: Tabelas de Dimensão e Tabela de Fatos.
 
-Usage:
-    - These views can be queried directly for analytics and reporting.
+Descrição:
+    - Cada visão realiza a integração final de dados entre as fontes CRM e ERP.
+    - Aplica-se o enriquecimento de dados para garantir que os datasets estejam 
+      prontos para consumo direto por ferramentas de Analytics e Reporting.
+
+Uso:
+    - Estas visões devem ser a única fonte de dados para dashboards e relatórios.
 ===============================================================================
 */
 
 -- =============================================================================
--- Create Dimension: gold.dim_customers
+-- Criação da Dimensão: gold.dim_customers
 -- =============================================================================
 IF OBJECT_ID('gold.dim_customers', 'V') IS NOT NULL
     DROP VIEW gold.dim_customers;
@@ -23,19 +29,19 @@ GO
 
 CREATE VIEW gold.dim_customers AS
 SELECT
-    ROW_NUMBER() OVER (ORDER BY cst_id) AS customer_key, -- Surrogate key
-    ci.cst_id                          AS customer_id,
-    ci.cst_key                         AS customer_number,
-    ci.cst_firstname                   AS first_name,
-    ci.cst_lastname                    AS last_name,
-    la.cntry                           AS country,
-    ci.cst_marital_status              AS marital_status,
+    ROW_NUMBER() OVER (ORDER BY ci.cst_id) AS customer_key, -- Chave Substituta (Surrogate Key)
+    ci.cst_id                              AS customer_id,
+    ci.cst_key                             AS customer_number,
+    ci.cst_firstname                       AS first_name,
+    ci.cst_lastname                        AS last_name,
+    la.cntry                               AS country,
+    ci.cst_marital_status                  AS marital_status,
     CASE 
-        WHEN ci.cst_gndr != 'n/a' THEN ci.cst_gndr -- CRM is the primary source for gender
-        ELSE COALESCE(ca.gen, 'n/a')  			   -- Fallback to ERP data
-    END                                AS gender,
-    ca.bdate                           AS birthdate,
-    ci.cst_create_date                 AS create_date
+        WHEN ci.cst_gndr != 'n/a' THEN ci.cst_gndr -- CRM é a fonte primária para gênero
+        ELSE COALESCE(ca.gen, 'n/a')               -- Fallback (contingência) para dados do ERP
+    END                                    AS gender,
+    ca.bdate                               AS birthdate,
+    ci.cst_create_date                     AS create_date
 FROM silver.crm_cust_info ci
 LEFT JOIN silver.erp_cust_az12 ca
     ON ci.cst_key = ca.cid
@@ -44,7 +50,7 @@ LEFT JOIN silver.erp_loc_a101 la
 GO
 
 -- =============================================================================
--- Create Dimension: gold.dim_products
+-- Criação da Dimensão: gold.dim_products
 -- =============================================================================
 IF OBJECT_ID('gold.dim_products', 'V') IS NOT NULL
     DROP VIEW gold.dim_products;
@@ -52,7 +58,7 @@ GO
 
 CREATE VIEW gold.dim_products AS
 SELECT
-    ROW_NUMBER() OVER (ORDER BY pn.prd_start_dt, pn.prd_key) AS product_key, -- Surrogate key
+    ROW_NUMBER() OVER (ORDER BY pn.prd_start_dt, pn.prd_key) AS product_key, -- Chave Substituta
     pn.prd_id       AS product_id,
     pn.prd_key      AS product_number,
     pn.prd_nm       AS product_name,
@@ -66,11 +72,11 @@ SELECT
 FROM silver.crm_prd_info pn
 LEFT JOIN silver.erp_px_cat_g1v2 pc
     ON pn.cat_id = pc.id
-WHERE pn.prd_end_dt IS NULL; -- Filter out all historical data
+WHERE pn.prd_end_dt IS NULL; -- Filtro: Mantém apenas a versão atual do produto (Remoção de Histórico)
 GO
 
 -- =============================================================================
--- Create Fact Table: gold.fact_sales
+-- Criação da Tabela de Fatos: gold.fact_sales
 -- =============================================================================
 IF OBJECT_ID('gold.fact_sales', 'V') IS NOT NULL
     DROP VIEW gold.fact_sales;
@@ -79,8 +85,8 @@ GO
 CREATE VIEW gold.fact_sales AS
 SELECT
     sd.sls_ord_num  AS order_number,
-    pr.product_key  AS product_key,
-    cu.customer_key AS customer_key,
+    pr.product_key  AS product_key,  -- Ligação com Dimensão Produto via Surrogate Key
+    cu.customer_key AS customer_key, -- Ligação com Dimensão Cliente via Surrogate Key
     sd.sls_order_dt AS order_date,
     sd.sls_ship_dt  AS shipping_date,
     sd.sls_due_dt   AS due_date,
