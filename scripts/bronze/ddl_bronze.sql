@@ -1,29 +1,46 @@
 /*
 ===============================================================================
-DDL Script: Create Bronze Tables
+Script DDL: Criação das Tabelas da Camada Bronze (Raw)
 ===============================================================================
-Script Purpose:
-    This script creates tables in the 'bronze' schema, dropping existing tables 
-    if they already exist.
-	  Run this script to re-define the DDL structure of 'bronze' Tables
+Objetivo:
+    Este script define a estrutura das tabelas na camada 'bronze'. 
+    A camada Bronze armazena os dados em seu estado original (raw), servindo 
+    como o primeiro ponto de entrada para os dados extraídos dos sistemas 
+    originais (CRM e ERP).
+
+Descrição:
+    - O script utiliza a técnica de 'Drop and Recreate' para garantir 
+      a idempotência (reexecução sem erros).
+    - As tabelas seguem o mapeamento direto das fontes de dados CSV.
+
+AVISO:
+    A execução deste script removerá todas as tabelas existentes no esquema 
+    'bronze' e seus respectivos dados. Use apenas em processos de carga 
+    inicial ou reconstrução do ambiente de staging.
 ===============================================================================
 */
 
+-- ===========================================================================
+-- Sistema de Origem: CRM
+-- ===========================================================================
+
+-- Tabela: crm_cust_info (Informações Cadastrais de Clientes)
 IF OBJECT_ID('bronze.crm_cust_info', 'U') IS NOT NULL
     DROP TABLE bronze.crm_cust_info;
 GO
 
 CREATE TABLE bronze.crm_cust_info (
-    cst_id              INT,
-    cst_key             NVARCHAR(50),
-    cst_firstname       NVARCHAR(50),
-    cst_lastname        NVARCHAR(50),
-    cst_marital_status  NVARCHAR(50),
-    cst_gndr            NVARCHAR(50),
-    cst_create_date     DATE
+    cst_id             INT,
+    cst_key            NVARCHAR(50),
+    cst_firstname      NVARCHAR(50),
+    cst_lastname       NVARCHAR(50),
+    cst_marital_status NVARCHAR(50),
+    cst_gndr           NVARCHAR(50),
+    cst_create_date    DATE
 );
 GO
 
+-- Tabela: crm_prd_info (Catálogo de Produtos)
 IF OBJECT_ID('bronze.crm_prd_info', 'U') IS NOT NULL
     DROP TABLE bronze.crm_prd_info;
 GO
@@ -39,6 +56,7 @@ CREATE TABLE bronze.crm_prd_info (
 );
 GO
 
+-- Tabela: crm_sales_details (Transações de Vendas)
 IF OBJECT_ID('bronze.crm_sales_details', 'U') IS NOT NULL
     DROP TABLE bronze.crm_sales_details;
 GO
@@ -56,6 +74,11 @@ CREATE TABLE bronze.crm_sales_details (
 );
 GO
 
+-- ===========================================================================
+-- Sistema de Origem: ERP
+-- ===========================================================================
+
+-- Tabela: erp_loc_a101 (Mapeamento de Localização de Clientes)
 IF OBJECT_ID('bronze.erp_loc_a101', 'U') IS NOT NULL
     DROP TABLE bronze.erp_loc_a101;
 GO
@@ -66,6 +89,7 @@ CREATE TABLE bronze.erp_loc_a101 (
 );
 GO
 
+-- Tabela: erp_cust_az12 (Dados Demográficos Adicionais - ERP)
 IF OBJECT_ID('bronze.erp_cust_az12', 'U') IS NOT NULL
     DROP TABLE bronze.erp_cust_az12;
 GO
@@ -77,6 +101,7 @@ CREATE TABLE bronze.erp_cust_az12 (
 );
 GO
 
+-- Tabela: erp_px_cat_g1v2 (Hierarquia de Categorias de Produtos)
 IF OBJECT_ID('bronze.erp_px_cat_g1v2', 'U') IS NOT NULL
     DROP TABLE bronze.erp_px_cat_g1v2;
 GO
