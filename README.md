@@ -1,13 +1,9 @@
 # SQL Server Data Warehouse: Projeto End-to-End (Arquitetura Medallion)
 
-## ⚙️ Stack Utilizada
-- **Banco de Dados:** SQL Server
-- **Ingestão:** `BULK INSERT`
-- **Automação:** Stored Procedures
-- **Arquitetura:** Medallion (Bronze, Silver, Gold)
-- **Modelagem:** Star Schema
-- **Qualidade de Dados:** Scripts de auditoria e validação
-- **Consumo:** BI, consultas SQL ad-hoc e análise analítica
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge&logo=microsoft-sql-server&logoColor=white)](https://www.microsoft.com/sql-server)
+[![Architecture](https://img.shields.io/badge/Architecture-Medallion-blue?style=for-the-badge)](https://learn.microsoft.com/en-us/azure/databricks/lakehouse/medallion)
+[![Data Quality](https://img.shields.io/badge/Data%20Quality-Verified-green?style=for-the-badge)](./tests/)
+
 ## 🎯 Objetivo do Projeto
 Este projeto demonstra a construção de um **Data Warehouse End-to-End** no **SQL Server**, com ingestão, tratamento, modelagem e validação dos dados seguindo a **Arquitetura Medallion** (**Bronze, Silver e Gold**).
 
@@ -43,6 +39,38 @@ Responsável por complementar os dados operacionais e cadastrais:
 - `erp_px_cat_g1v2`: categorias e classificações de produtos.
 
 Essa separação entre CRM e ERP é importante porque cada sistema contribui com partes diferentes da visão de negócio. Enquanto o CRM concentra os eventos de venda e alguns cadastros, o ERP complementa atributos mestres que enriquecem a análise final.
+
+```mermaid
+graph TD
+    subgraph "Fontes Externas (CSV)"
+        CRM_F[CRM Files]
+        ERP_F[ERP Files]
+    end
+
+    subgraph "Camada Bronze (Raw)"
+        B_CRM[Bronze CRM Tables]
+        B_ERP[Bronze ERP Tables]
+    end
+
+    subgraph "Camada Silver (Cleansed)"
+        S_CRM[Silver CRM Tables]
+        S_ERP[Silver ERP Tables]
+    end
+
+    subgraph "Camada Gold (Analytics)"
+        G_FACT[Fact Sales]
+        G_DIM_C[Dim Customers]
+        G_DIM_P[Dim Products]
+    end
+
+    CRM_F -->|Bulk Insert| B_CRM
+    ERP_F -->|Bulk Insert| B_ERP
+    B_CRM -->|Cleaning & Logic| S_CRM
+    B_ERP -->|Cleaning & Logic| S_ERP
+    S_CRM & S_ERP -->|Modeling| G_FACT
+    S_CRM & S_ERP -->|Modeling| G_DIM_C
+    S_CRM & S_ERP -->|Modeling| G_DIM_P
+```
 
 ### 1. **Bronze Layer (Raw)**
 A camada Bronze é responsável pela **ingestão inicial** dos arquivos CSV no SQL Server. Nessa etapa, cada arquivo de origem é carregado para sua tabela correspondente, preservando o conteúdo o mais próximo possível da fonte original.
@@ -85,8 +113,9 @@ As tabelas finais são:
 - `dim_customers`: dimensão de clientes;
 - `dim_products`: dimensão de produtos.
 
-### 🔄 Fluxo entre as tabelas
-O fluxo de transformação pode ser resumido da seguinte forma:
+---
+
+## 📊 Modelo de Dados (Gold)
 
 #### **Fato de vendas**
 A tabela **`fact_sales`** é derivada principalmente de:
@@ -109,36 +138,80 @@ A dimensão **`dim_products`** é formada a partir da integração de:
 
 Com isso, a dimensão passa a conter não apenas o cadastro básico dos produtos, mas também classificações e categorias importantes para segmentações e análises de desempenho.
 
-```text
-CRM
- ├── crm_sales_details ───────────────▶ fact_sales
- ├── crm_cust_info ──┐
- │                   ├───────────────▶ dim_customers
-ERP                  │
- ├── erp_cust_az12 ──┤
- └── erp_loc_a101 ───┘
+```mermaid
+erDiagram
+    fact_sales {
+        string order_number
+        int product_key FK
+        int customer_key FK
+        date order_date
+        date shipping_date
+        date due_date
+        float sales_amount
+        int quantity
+        float price
+    }
+    dim_customers {
+        int customer_key PK
+        int customer_id
+        string customer_number
+        string first_name
+        string last_name
+        string country
+        string marital_status
+        string gender
+        date birthdate
+        date create_date
+    }
+    dim_products {
+        int product_key PK
+        int product_id
+        string product_number
+        string product_name
+        string category_id
+        string category
+        string subcategory
+        string maintenance
+        float cost
+        string product_line
+        date start_date
+    }
 
-CRM
- └── crm_prd_info ───┐
-                     ├───────────────▶ dim_products
-ERP                  │
- └── erp_px_cat_g1v2 ┘
- ```
-Na prática:
-- a **Bronze** preserva os dados de origem;
-- a **Silver** aplica limpeza e padronização;
-- a **Gold** entrega tabelas analíticas prontas para consumo em **BI & Reporting**, **consultas SQL ad-hoc** e possíveis aplicações de **Machine Learning**.
-
-Essa divisão torna o projeto mais organizado, escalável e aderente a boas práticas de engenharia de dados.
+    dim_customers ||--o{ fact_sales : "realiza"
+    dim_products ||--o{ fact_sales : "inclui"
+```
 
 ---
-## 🚀 Diferenciais Técnicos
-- Implementação de carga automatizada via **Stored Procedures**
-- Estratégia de ingestão com **Full Load** usando **`TRUNCATE` + `INSERT`**
-- Uso de **`BULK INSERT`** para carga performática de arquivos CSV
-- Separação clara entre ingestão, limpeza e modelagem analítica
-- Construção de camada Gold com **Star Schema**
-- Criação de scripts de **auditoria de qualidade** para validação do pipeline
+
+## 🚀 Como Executar o Projeto
+
+### Pré-requisitos
+- **SQL Server** (Express, Developer ou Docker).
+- **SSMS** (SQL Server Management Studio) ou **Azure Data Studio**.
+
+### Passo a Passo
+1. **Configuração Inicial:**
+   - Execute o script `scripts/init_database.sql` para criar o banco de dados e os esquemas (`bronze`, `silver`, `gold`).
+2. **Criação das Tabelas (DDL):**
+   - Execute os scripts de DDL na seguinte ordem:
+     1. `scripts/bronze/ddl_bronze.sql`
+     2. `scripts/silver/ddl_silver.sql`
+     3. `scripts/gold/ddl_gold.sql`
+3. **Carga dos Dados (Procedures):**
+   - Execute as Stored Procedures para criar a lógica de carga:
+     1. `scripts/bronze/proc_load_bronze.sql`
+     2. `scripts/silver/proc_load_silver.sql`
+     3. `scripts/gold/proc_load_gold.sql`
+4. **⚠️ Ajuste de Caminho:**
+   - No script `proc_load_bronze.sql`, altere a variável `@base_path` para o caminho absoluto onde você clonou este repositório.
+5. **Execução do Pipeline:**
+   - Execute os comandos abaixo para rodar o pipeline completo:
+     ```sql
+     EXEC bronze.load_bronze;
+     EXEC silver.load_silver;
+     EXEC gold.load_gold;
+     ```
+
 
 ## 🛡️ Data Quality (Garantia de Qualidade)
 Foram desenvolvidos scripts de auditoria específicos para validar a consistência dos dados em cada camada do pipeline (ex.: `quality_check_gold.sql`).
@@ -152,20 +225,26 @@ As verificações incluem:
 
 Essa etapa foi importante para reforçar a confiabilidade da base analítica final
 
----
+
+## Desafios Superados
+- **Padronização de Fontes:** Dados de CRM e ERP possuíam formatos distintos de gênero e país. Na camada **Silver**, criamos mapeamentos (`CASE WHEN`) para unificar as nomenclaturas.
+- **Qualidade de Datas:** Datas de nascimento futuras no ERP foram tratadas como `NULL`, e datas de vendas em formato `INT` foram convertidas para `DATE`.
+- **Integridade Financeira:** Identificamos casos onde `Sales` != `Qty * Price`. Implementamos uma lógica de recálculo automático para priorizar a verdade aritmética.
 
 ## 📖 Documentação Adicional
-Para garantir que o projeto seja compreensível para usuários de negócio e desenvolvedores, o repositório inclui:
-- **[Catálogo de Dados](./docs/data_catalog.md):** Descrição detalhada de cada coluna, tipo de dado e exemplo de conteúdo na camada Gold.
-- **[Convenções de Nomenclatura](./docs/naming_conventions.md):** Padrão de escrita `snake_case` e regras para prefixos de objetos.
+- **[Catálogo de Dados](./docs/data_catalog.md):** Dicionário de colunas e tipos.
+- **[Convenções de Nomenclatura](./docs/naming_conventions.md):** Padrões adotados.
+
+
+## 🛣️ Próximos Passos
+
+-  🚀 **Business Analytics:** Desenvolvendo análise profunda dos dados para insights de negócio no repositório [retail-sales-analysis-sql](https://github.com/luzotavio/retail-sales-analysis-sql.git).
 
 ---
 
-## 🎓 Créditos e Aprendizado
-Este projeto foi desenvolvido como parte de um estudo prático de Engenharia de Dados, com implementação própria baseada no tutorial do canal **Data with Baraa**.
 
-O conteúdo serviu como referência para a arquitetura e para a proposta do projeto, enquanto a construção, organização do repositório, documentação e entendimento das etapas foram utilizados como prática aplicada de aprendizado.
 
-- **Vídeo Original:** [SQL Data Warehouse from Scratch | Full Hands-On Data Engineering Project](https://www.youtube.com/watch?v=9GVqKuTVANE)
+## 🎓 Créditos
+Baseado no projeto de **Data with Baraa**. Construção, documentação e testes implementados como prática de Engenharia de Dados.
 
 ---
