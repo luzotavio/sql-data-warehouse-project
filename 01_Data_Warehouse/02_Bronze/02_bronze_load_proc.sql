@@ -8,7 +8,7 @@ Objetivo:
 
 Diferencial Técnico:
     - SQL Dinâmico para portabilidade do projeto.
-    - Estrutura de pastas padronizada: /sql-data-warehouse-project/datasets/
+    - Estrutura de pastas padronizada: /sql-data-warehouse-project/data/
     - Log de execução detalhado com medição de performance.
 
 Exemplo de Uso:
@@ -26,7 +26,7 @@ BEGIN
     -- =========================================================================
     -- CONFIGURAÇÃO: Caminho base seguindo a estrutura do repositório GitHub
     -- =========================================================================
-    SET @base_path = 'C:\sql-data-warehouse-project\datasets\';
+    SET @base_path = 'sql-data-warehouse-project\data\';
 
     BEGIN TRY
         SET @batch_start_time = GETDATE();

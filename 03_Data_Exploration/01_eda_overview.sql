@@ -1,234 +1,235 @@
 /*
 ===============================================================================
-Exploratory Data Analysis (EDA) - Retail Sales Project
+Análise Exploratória de Dados (EDA) - Visão Geral do Negócio
 ===============================================================================
-Objective: 
-    Perform a deep dive into the 'gold' layer to extract actionable insights 
-    regarding sales performance, customer demographics, and product trends.
+Objetivo:
+    - Realizar um mergulho profundo na camada 'Gold' para extrair insights acionáveis.
+    - Analisar performance de vendas, demografia de clientes e tendências de produtos.
 
-Scope:
-    - Customer Behavior & Demographics
-    - Key Performance Indicators (KPIs)
-    - Product Category Analysis
-    - Geographical Sales Distribution
-    - Top/Bottom Performers
+Escopo da Análise:
+    1. Base de Clientes e Alcance Geográfico.
+    2. KPIs Executivos (Dashboard Tabular).
+    3. Segmentação Demográfica (Gênero).
+    4. Distribuição e Estrutura de Custos por Categoria.
+    5. Ranking de Rentabilidade (Clientes e Produtos).
+    6. Identificação de "Gargalos" (Produtos com baixo desempenho).
 
-Database: SQL Server / T-SQL compatible
+Banco de Dados: SQL Server / Compatível com T-SQL
 ===============================================================================
 */
 
 -------------------------------------------------------------------------------
--- 1. BASELINE CUSTOMER REACH
+-- 1. ALCANCE DA BASE DE CLIENTES
 -------------------------------------------------------------------------------
--- Objective: Calculate the total volume of unique customers who have made purchases.
--- Business Insight: Establishes the actual size of the active customer base.
+-- Objetivo: Calcular o volume total de clientes únicos que realizaram compras.
+-- Insight de Negócio: Estabelece o tamanho real da base de clientes ativa.
 
 SELECT 
-    COUNT(DISTINCT customer_key) AS total_unique_customers
+    COUNT(DISTINCT customer_key) AS total_clientes_unicos
 FROM gold.fact_sales;
 
 
 -------------------------------------------------------------------------------
--- 2. EXECUTIVE SUMMARY (KPI DASHBOARD)
+-- 2. RESUMO EXECUTIVO (DASHBOARD DE KPIs)
 -------------------------------------------------------------------------------
--- Objective: Consolidate high-level metrics into a single tabular view.
--- Business Insight: Provides a "Quick Health Check" for the business, 
--- covering revenue, volume, and inventory variety.
+-- Objetivo: Consolidar métricas de alto nível em uma única visualização.
+-- Insight de Negócio: Fornece um "Check-up Rápido" da saúde da empresa, 
+-- cobrindo receita, volume e variedade de estoque.
 
 SELECT 
-    'Total Sales Revenue' AS measure_name,
-    SUM(sales_amount)     AS measure_value 
+    'Receita Total de Vendas' AS nome_metrica,
+    SUM(sales_amount)         AS valor_metrica 
 FROM gold.fact_sales
 
 UNION ALL
 
 SELECT 
-    'Total Quantity Sold' AS measure_name,
-    SUM(quantity)         AS measure_value 
+    'Quantidade Total Vendida' AS nome_metrica,
+    SUM(quantity)              AS valor_metrica 
 FROM gold.fact_sales
 
 UNION ALL
 
 SELECT 
-    'Average Sales Price' AS measure_name, 
-    AVG(sales_amount)     AS measure_value 
+    'Preço Médio de Venda'     AS nome_metrica, 
+    AVG(sales_amount)          AS valor_metrica 
 FROM gold.fact_sales
 
 UNION ALL
 
 SELECT 
-    'Total Orders Placed' AS measure_name, 
-    COUNT(DISTINCT order_number) AS measure_value 
+    'Total de Pedidos Realizados' AS nome_metrica, 
+    COUNT(DISTINCT order_number)  AS valor_metrica 
 FROM gold.fact_sales
 
 UNION ALL
 
 SELECT 
-    'Total Unique Products' AS measure_name, 
-    COUNT(product_key)      AS measure_value 
+    'Total de Produtos Únicos'    AS nome_metrica, 
+    COUNT(product_key)            AS valor_metrica 
 FROM gold.dim_products
 
 UNION ALL
 
 SELECT 
-    'Total Registered Customers' AS measure_name, 
-    COUNT(customer_key)          AS measure_value 
+    'Total de Clientes Cadastrados' AS nome_metrica, 
+    COUNT(customer_key)             AS valor_metrica 
 FROM gold.dim_customers;
 
 
 -------------------------------------------------------------------------------
--- 3. GEOGRAPHICAL SEGMENTATION
+-- 3. SEGMENTAÇÃO GEOGRÁFICA
 -------------------------------------------------------------------------------
--- Objective: Identify customer density across different countries.
--- Business Insight: Helps prioritize regions for logistics and marketing focus.
+-- Objetivo: Identificar a densidade de clientes em diferentes países.
+-- Insight de Negócio: Ajuda a priorizar regiões para logística e foco de marketing.
 
 SELECT 
     country, 
-    COUNT(customer_key) AS total_customers
+    COUNT(customer_key) AS total_clientes
 FROM gold.dim_customers
 GROUP BY 
     country
 ORDER BY 
-    total_customers DESC;
+    total_clientes DESC;
 
 
 -------------------------------------------------------------------------------
--- 4. DEMOGRAPHIC ANALYSIS (GENDER)
+-- 4. ANÁLISE DEMOGRÁFICA (GÊNERO)
 -------------------------------------------------------------------------------
--- Objective: Breakdown the customer base by gender.
--- Business Insight: Informs product development and personalized communication strategies.
+-- Objetivo: Quebra da base de clientes por gênero.
+-- Insight de Negócio: Informa o desenvolvimento de produtos e estratégias de comunicação.
 
 SELECT
     gender,
-    COUNT(customer_key) AS total_customers
+    COUNT(customer_key) AS total_clientes
 FROM gold.dim_customers
 GROUP BY 
     gender
 ORDER BY 
-    total_customers DESC;
+    total_clientes DESC;
 
 
 -------------------------------------------------------------------------------
--- 5. PRODUCT CATEGORY DISTRIBUTION
+-- 5. DISTRIBUIÇÃO DE CATEGORIAS DE PRODUTOS
 -------------------------------------------------------------------------------
--- Objective: Analyze the variety of products within each category.
--- Business Insight: Visualizes the breadth and depth of the current catalog.
+-- Objetivo: Analisar a variedade de produtos dentro de cada categoria.
+-- Insight de Negócio: Visualiza a amplitude e profundidade do catálogo atual.
 
 SELECT 
     category,
-    COUNT(product_key) AS total_products
+    COUNT(product_key) AS total_produtos
 FROM gold.dim_products
 GROUP BY 
     category
 ORDER BY 
-    total_products DESC;
+    total_produtos DESC;
 
 
 -------------------------------------------------------------------------------
--- 6. COST STRUCTURE BY CATEGORY
+-- 6. ESTRUTURA DE CUSTOS POR CATEGORIA
 -------------------------------------------------------------------------------
--- Objective: Calculate the average manufacturing/acquisition cost per category.
--- Business Insight: Evaluates capital tied up in stock and average unit cost trends.
+-- Objetivo: Calcular o custo médio de aquisição por categoria.
+-- Insight de Negócio: Avalia o capital imobilizado em estoque e tendências de custo unitário.
 
 SELECT 
     category,
-    AVG(cost) AS avg_product_cost
+    AVG(cost) AS custo_medio_produto
 FROM gold.dim_products
 GROUP BY 
     category
 ORDER BY 
-    avg_product_cost DESC;
+    custo_medio_produto DESC;
 
 
 -------------------------------------------------------------------------------
--- 7. REVENUE BY PRODUCT CATEGORY
+-- 7. RECEITA POR CATEGORIA DE PRODUTO
 -------------------------------------------------------------------------------
--- Objective: Correlate sales volume with product categories to find top earners.
--- Business Insight: Identifies the most profitable segments of the business.
+-- Objetivo: Correlacionar volume de vendas com categorias para encontrar os maiores geradores de receita.
+-- Insight de Negócio: Identifica os segmentos mais lucrativos do negócio.
 
 SELECT 
     dp.category,
-    SUM(fs.sales_amount) AS total_revenue
+    SUM(fs.sales_amount) AS receita_total
 FROM gold.fact_sales AS fs
 LEFT JOIN gold.dim_products AS dp
     ON dp.product_key = fs.product_key
 GROUP BY 
     dp.category
 ORDER BY 
-    total_revenue DESC;
+    receita_total DESC;
 
 
 -------------------------------------------------------------------------------
--- 8. CUSTOMER PROFITABILITY RANKING
+-- 8. RANKING DE LUCRATIVIDADE POR CLIENTE
 -------------------------------------------------------------------------------
--- Objective: Rank customers based on their total historical spend.
--- Business Insight: Enables targeted loyalty programs for "Whale" or VIP customers.
+-- Objetivo: Rankear clientes com base no gasto histórico total (LTV).
+-- Insight de Negócio: Permite programas de fidelidade direcionados para clientes VIP.
 
 SELECT 
     dc.customer_number,
     dc.first_name,
-    dc.lastname,
-    SUM(fs.sales_amount) AS total_lifetime_revenue
+    dc.last_name,
+    SUM(fs.sales_amount) AS receita_total_historica
 FROM gold.fact_sales AS fs
 LEFT JOIN gold.dim_customers AS dc
     ON fs.customer_key = dc.customer_key
 GROUP BY 
     dc.customer_number, 
     dc.first_name, 
-    dc.lastname
+    dc.last_name
 ORDER BY 
-    total_lifetime_revenue DESC;
+    receita_total_historica DESC;
 
 
 -------------------------------------------------------------------------------
--- 9. SALES VOLUME BY GEOGRAPHY
+-- 9. VOLUME DE VENDAS POR GEOGRAFIA
 -------------------------------------------------------------------------------
--- Objective: Quantify the total number of items sold per country.
--- Business Insight: Highlights physical demand, independent of currency value.
+-- Objetivo: Quantificar o número total de itens vendidos por país.
+-- Insight de Negócio: Destaca a demanda física, independente do valor da moeda.
 
 SELECT 
     dc.country,
-    SUM(fs.quantity) AS total_quantity_sold
+    SUM(fs.quantity) AS quantidade_total_vendida
 FROM gold.fact_sales AS fs
 LEFT JOIN gold.dim_customers AS dc
     ON fs.customer_key = dc.customer_key
 GROUP BY 
     dc.country
 ORDER BY 
-    total_quantity_sold DESC;
+    quantidade_total_vendida DESC;
 
 
 -------------------------------------------------------------------------------
--- 10. BEST SELLERS (TOP 5 PRODUCTS BY REVENUE)
+-- 10. OS MAIS VENDIDOS (TOP 5 PRODUTOS POR RECEITA)
 -------------------------------------------------------------------------------
--- Objective: List the top 5 individual products driving the most revenue.
--- Business Insight: Focus on high-impact products for inventory replenishment.
+-- Objetivo: Listar os 5 produtos individuais que geram mais receita.
+-- Insight de Negócio: Foco em produtos de alto impacto para reposição de estoque.
 
 SELECT TOP 5
     dp.product_name,
-    SUM(fs.sales_amount) AS total_revenue
+    SUM(fs.sales_amount) AS receita_total
 FROM gold.fact_sales AS fs
 LEFT JOIN gold.dim_products AS dp
     ON dp.product_key = fs.product_key
 GROUP BY 
     dp.product_name
 ORDER BY 
-    total_revenue DESC;
+    receita_total DESC;
 
 
 -------------------------------------------------------------------------------
--- 11. LOW PERFORMERS (BOTTOM 5 PRODUCTS BY REVENUE)
+-- 11. BAIXO DESEMPENHO (OS 5 PRODUTOS COM MENOR RECEITA)
 -------------------------------------------------------------------------------
--- Objective: Identify products with the lowest financial contribution.
--- Business Insight: Highlights potential stock to be liquidated or discontinued.
+-- Objetivo: Identificar produtos com a menor contribuição financeira.
+-- Insight de Negócio: Destaca estoque potencial para liquidação ou descontinuação.
 
 SELECT TOP 5
     dp.product_name,
-    SUM(fs.sales_amount) AS total_revenue
+    SUM(fs.sales_amount) AS receita_total
 FROM gold.fact_sales AS fs
 LEFT JOIN gold.dim_products AS dp
     ON dp.product_key = fs.product_key
 GROUP BY 
     dp.product_name
 ORDER BY 
-    total_revenue ASC;
+    receita_total ASC;
