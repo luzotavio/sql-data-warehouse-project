@@ -1,30 +1,24 @@
 /*
 ===============================================================================
-Main Pipeline Execution Script
+Script Mestre de Execução do Pipeline (ETL)
 ===============================================================================
-This script orchestrates the full ETL process by executing the stored 
-procedures for each layer (Bronze, Silver, Gold).
+Este script orquestra o processo de carga das camadas Bronze e Silver.
+A camada Gold é composta por VIEWS e não requer carga física.
 ===============================================================================
 */
 
--- 1. Load Bronze Layer (Raw Data Ingestion)
+-- 1. Carga da Camada Bronze (Ingestão de Dados Brutos)
 PRINT '---------------------------------------------------';
-PRINT 'Loading Bronze Layer...';
+PRINT 'Iniciando Carga da Camada Bronze...';
 PRINT '---------------------------------------------------';
 EXEC bronze.load_bronze;
 
--- 2. Load Silver Layer (Data Cleansing & Standardization)
+-- 2. Carga da Camada Silver (Limpeza e Padronização)
 PRINT '---------------------------------------------------';
-PRINT 'Loading Silver Layer...';
+PRINT 'Iniciando Carga da Camada Silver...';
 PRINT '---------------------------------------------------';
 EXEC silver.load_silver;
 
--- 3. Load Gold Layer (Dimensional Modeling)
 PRINT '---------------------------------------------------';
-PRINT 'Loading Gold Layer...';
-PRINT '---------------------------------------------------';
-EXEC gold.load_gold;
-
-PRINT '---------------------------------------------------';
-PRINT 'Pipeline Completed Successfully!';
+PRINT 'Pipeline de Dados Finalizado com Sucesso!';
 PRINT '---------------------------------------------------';
