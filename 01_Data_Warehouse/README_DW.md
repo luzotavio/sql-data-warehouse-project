@@ -121,5 +121,5 @@ Essa etapa foi importante para reforçar a confiabilidade da base analítica fin
 - **Integridade Financeira:** Identificamos casos onde `Sales` != `Qty * Price`. Implementamos uma lógica de recálculo automático para priorizar a verdade aritmética.
 
 ## 📖 Documentação Adicional
-- **[Catálogo de Dados](./docs/data_catalog.md):** Dicionário de colunas e tipos.
-- **[Convenções de Nomenclatura](./docs/naming_conventions.md):** Padrões adotados.
+- **[Catálogo de Dados](../docs/data_catalog.md):** Dicionário de colunas e tipos.
+- **[Convenções de Nomenclatura](../docs/naming_conventions.md):** Padrões adotados.
