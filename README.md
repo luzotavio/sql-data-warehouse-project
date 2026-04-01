@@ -20,7 +20,6 @@ Muitas empresas sofrem com o "Silêncio de Dados", onde informações cruciais e
 
 ## 🏗️ Estrutura do Repositório
 
-Organizado seguindo o fluxo de **Analytics Engineering**:
 
 ```text
 sql-data-warehouse-project/
@@ -58,6 +57,8 @@ Para facilitar a exploração técnica, este projeto utiliza uma abordagem de **
 
 ## ⚙️ O Pipeline de Dados 
 
+![Arquitetura Medallion](./docs/architecture_medallion.png)
+
 O projeto implementa a **Arquitetura Medallion**, garantindo que o dado evolua em qualidade a cada etapa:
 
 1.  **Bronze (Ingestão):** O dado entra "como está". Utilizamos **SQL Dinâmico** para tornar o processo de ingestão escalável e independente de caminhos de pasta fixos.
@@ -92,12 +93,6 @@ Utilizando técnicas de **SQL Avançado**, o projeto entrega respostas automáti
 
 ---
 
-## 🛣️ Roadmap & Próximos Passos
-- [ ] Integração com **Power BI** para visualização dos indicadores.
-- [ ] Implementação de **SCD (Slowly Changing Dimensions)** na camada Gold.
-- [ ] Automação do pipeline via **Python** ou ferramentas de orquestração (dbt).
-
----
 
 ## 🎓 Créditos e Agradecimentos
 Inspirado e construído com base na metodologia de **Data with Baraa** (YouTube), com extensões proprietárias em modelagem dimensional, documentação modular e práticas avançadas de Analytics Engineering.

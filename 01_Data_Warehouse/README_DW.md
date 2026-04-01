@@ -28,37 +28,7 @@ Responsável por complementar os dados operacionais e cadastrais:
 
 Essa separação entre CRM e ERP é importante porque cada sistema contribui com partes diferentes da visão de negócio. Enquanto o CRM concentra os eventos de venda e alguns cadastros, o ERP complementa atributos mestres que enriquecem a análise final.
 
-```mermaid
-graph TD
-    subgraph "Fontes Externas (CSV)"
-        CRM_F[CRM Files]
-        ERP_F[ERP Files]
-    end
-
-    subgraph "Camada Bronze (Raw)"
-        B_CRM[Bronze CRM Tables]
-        B_ERP[Bronze ERP Tables]
-    end
-
-    subgraph "Camada Silver (Cleansed)"
-        S_CRM[Silver CRM Tables]
-        S_ERP[Silver ERP Tables]
-    end
-
-    subgraph "Camada Gold (Analytics)"
-        G_FACT[Fact Sales]
-        G_DIM_C[Dim Customers]
-        G_DIM_P[Dim Products]
-    end
-
-    CRM_F -->|Bulk Insert| B_CRM
-    ERP_F -->|Bulk Insert| B_ERP
-    B_CRM -->|Cleaning & Logic| S_CRM
-    B_ERP -->|Cleaning & Logic| S_ERP
-    S_CRM & S_ERP -->|Modeling| G_FACT
-    S_CRM & S_ERP -->|Modeling| G_DIM_C
-    S_CRM & S_ERP -->|Modeling| G_DIM_P
-```
+![Arquitetura Medallion](../docs/architecture_medallion.png)
 
 ### 1. **Bronze Layer (Raw)**
 A camada Bronze é responsável pela **ingestão inicial** dos arquivos CSV no SQL Server. Nessa etapa, cada arquivo de origem é carregado para sua tabela correspondente, preservando o conteúdo o mais próximo possível da fonte original.
@@ -126,48 +96,7 @@ A dimensão **`dim_products`** é formada a partir da integração de:
 
 Com isso, a dimensão passa a conter não apenas o cadastro básico dos produtos, mas também classificações e categorias importantes para segmentações e análises de desempenho.
 
-```mermaid
-erDiagram
-    fact_sales {
-        string order_number
-        int product_key FK
-        int customer_key FK
-        date order_date
-        date shipping_date
-        date due_date
-        float sales_amount
-        int quantity
-        float price
-    }
-    dim_customers {
-        int customer_key PK
-        int customer_id
-        string customer_number
-        string first_name
-        string last_name
-        string country
-        string marital_status
-        string gender
-        date birthdate
-        date create_date
-    }
-    dim_products {
-        int product_key PK
-        int product_id
-        string product_number
-        string product_name
-        string category_id
-        string category
-        string subcategory
-        string maintenance
-        float cost
-        string product_line
-        date start_date
-    }
-
-    dim_customers ||--o{ fact_sales : "realiza"
-    dim_products ||--o{ fact_sales : "inclui"
-```
+![Arquitetura Medallion](../docs/gold_er_diagram.png)
 
 
 
